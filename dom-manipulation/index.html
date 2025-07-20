@@ -1,128 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dynamic Quote Generator with Server Sync</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 2rem; }
-    .quote-card { border: 1px solid #ddd; padding: 1rem; margin-bottom: 1rem; }
-    .notification { color: green; font-weight: bold; margin: 1rem 0; }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dynamic Quote Generator</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <h1>Dynamic Quote Generator</h1>
 
-  <div>
-    <input type="text" id="quoteText" placeholder="Enter quote">
-    <input type="text" id="author" placeholder="Enter author">
-    <button onclick="addQuote()">Add Quote</button>
-  </div>
+  <form id="quoteForm">
+    <input type="text" id="quoteInput" placeholder="Enter a quote" required />
+    <input type="text" id="authorInput" placeholder="Author" required />
+    <input type="text" id="categoryInput" placeholder="Category" required />
+    <button type="submit">Add Quote</button>
+  </form>
 
-  <div class="notification" id="notification"></div>
+  <select id="categoryFilter" onchange="filterQuotes()">
+    <option value="all">All Categories</option>
+  </select>
 
-  <h2>Quotes</h2>
-  <div id="quoteList"></div>
+  <div id="quoteContainer"></div>
 
-  <script>
-    const quoteText = document.getElementById('quoteText');
-    const authorInput = document.getElementById('author');
-    const quoteList = document.getElementById('quoteList');
-    const notification = document.getElementById('notification');
+  <button onclick="exportToJson()">Export Quotes</button>
+  <input type="file" id="importFile" accept=".json" onchange="importFromJsonFile(event)" />
 
-    let quotes = JSON.parse(localStorage.getItem('quotes')) || [];
-
-    function notifyUser(message) {
-      notification.textContent = message;
-      setTimeout(() => notification.textContent = '', 3000);
-    }
-
-    function saveQuotes() {
-      localStorage.setItem('quotes', JSON.stringify(quotes));
-    }
-
-    function displayQuotes() {
-      quoteList.innerHTML = '';
-      quotes.forEach((q, index) => {
-        const div = document.createElement('div');
-        div.className = 'quote-card';
-        div.innerHTML = `<strong>"${q.text}"</strong> - ${q.author}
-          <button onclick="removeQuote(${index})">Remove</button>`;
-        quoteList.appendChild(div);
-      });
-    }
-
-    function addQuote() {
-      const text = quoteText.value.trim();
-      const author = authorInput.value.trim();
-      if (!text || !author) return alert("Both fields are required");
-
-      const newQuote = { id: Date.now(), text, author, updatedAt: Date.now() };
-      quotes.push(newQuote);
-      saveQuotes();
-      displayQuotes();
-      postQuoteToServer(newQuote);
-      quoteText.value = '';
-      authorInput.value = '';
-    }
-
-    function removeQuote(index) {
-      quotes.splice(index, 1);
-      saveQuotes();
-      displayQuotes();
-    }
-
-    // Simulate server fetch (mock API)
-    async function fetchQuotesFromServer() {
-      try {
-        const res = await fetch('https://jsonplaceholder.typicode.com/posts?_limit=5');
-        const data = await res.json();
-        return data.map(post => ({
-          id: post.id,
-          text: post.title,
-          author: `User ${post.userId}`,
-          updatedAt: Date.now()
-        }));
-      } catch (error) {
-        console.error("Fetch error:", error);
-        return [];
-      }
-    }
-
-    async function postQuoteToServer(quote) {
-      try {
-        await fetch('https://jsonplaceholder.typicode.com/posts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(quote)
-        });
-      } catch (error) {
-        console.error("Post error:", error);
-      }
-    }
-
-    async function syncQuotes() {
-      const serverQuotes = await fetchQuotesFromServer();
-      let updated = false;
-
-      serverQuotes.forEach(serverQuote => {
-        const exists = quotes.some(localQuote => localQuote.id === serverQuote.id);
-        if (!exists) {
-          quotes.push(serverQuote);
-          updated = true;
-        }
-      });
-
-      if (updated) {
-        saveQuotes();
-        displayQuotes();
-        notifyUser("Quotes synced with server!");
-      }
-    }
-
-    displayQuotes();
-    syncQuotes();
-    setInterval(syncQuotes, 30000); // Check every 30 seconds
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
