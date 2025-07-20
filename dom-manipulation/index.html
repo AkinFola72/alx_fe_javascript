@@ -1,30 +1,123 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dynamic Quote Generator</title>
-  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      max-width: 800px;
+      margin: auto;
+    }
+
+    #quoteList div {
+      border: 1px solid #ccc;
+      padding: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    #notification {
+      margin-top: 1rem;
+      padding: 0.5rem;
+      background-color: #dff0d8;
+      color: #3c763d;
+      display: none;
+    }
+  </style>
 </head>
+
 <body>
   <h1>Dynamic Quote Generator</h1>
 
-  <form id="quoteForm">
-    <input type="text" id="quoteInput" placeholder="Enter a quote" required />
-    <input type="text" id="authorInput" placeholder="Author" required />
-    <input type="text" id="categoryInput" placeholder="Category" required />
-    <button type="submit">Add Quote</button>
-  </form>
+  <div>
+    <input type="text" id="quoteInput" placeholder="Enter quote" />
+    <input type="text" id="authorInput" placeholder="Enter author" />
+    <button onclick="addQuote()">Add Quote</button>
+  </div>
 
-  <select id="categoryFilter" onchange="filterQuotes()">
-    <option value="all">All Categories</option>
-  </select>
+  <div id="notification"></div>
 
-  <div id="quoteContainer"></div>
+  <h2>Quotes</h2>
+  <div id="quoteList"></div>
 
-  <button onclick="exportToJson()">Export Quotes</button>
-  <input type="file" id="importFile" accept=".json" onchange="importFromJsonFile(event)" />
+  <script>
+    let quotes = JSON.parse(localStorage.getItem("quotes")) || [];
 
-  <script src="script.js"></script>
+    function generateId() {
+      return Date.now().toString();
+    }
+
+    function saveQuotes() {
+      localStorage.setItem("quotes", JSON.stringify(quotes));
+    }
+
+    function notifyUser(message) {
+      const notification = document.getElementById("notification");
+      notification.innerText = message;
+      notification.style.display = "block";
+      setTimeout(() => (notification.style.display = "none"), 3000);
+    }
+
+    function addQuote() {
+      const text = document.getElementById("quoteInput").value;
+      const author = document.getElementById("authorInput").value;
+      if (!text || !author) return;
+
+      const newQuote = { id: generateId(), text, author };
+      quotes.push(newQuote);
+      saveQuotes();
+      displayQuotes();
+      postQuoteToServer(newQuote);
+    }
+
+    function displayQuotes() {
+      const container = document.getElementById("quoteList");
+      container.innerHTML = "";
+      quotes.forEach((quote) => {
+        const div = document.createElement("div");
+        div.innerHTML = `"${quote.text}" - <strong>${quote.author}</strong>`;
+        container.appendChild(div);
+      });
+    }
+
+    async function fetchQuotesFromServer() {
+      const response = await fetch("https://jsonplaceholder.typicode.com/posts");
+      const data = await response.json();
+      return data.slice(0, 5).map((item) => ({ id: item.id.toString(), text: item.title, author: "Server" }));
+    }
+
+    async function postQuoteToServer(quote) {
+      await fetch("https://jsonplaceholder.typicode.com/posts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(quote),
+      });
+    }
+
+    async function syncQuotes() {
+      const serverQuotes = await fetchQuotesFromServer();
+      let newQuotes = false;
+      serverQuotes.forEach((quote) => {
+        if (!quotes.find((q) => q.id === quote.id)) {
+          quotes.push(quote);
+          newQuotes = true;
+        }
+      });
+      if (newQuotes) {
+        saveQuotes();
+        displayQuotes();
+        notifyUser("Quotes synced with server!");
+      }
+    }
+
+    displayQuotes();
+    setInterval(syncQuotes, 30000);
+  </script>
 </body>
+
 </html>
