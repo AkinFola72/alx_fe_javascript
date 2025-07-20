@@ -1,4 +1,6 @@
 let quotes = [];
+const SYNC_INTERVAL = 30000; // 30 seconds
+const SERVER_KEY = 'mockServerQuotes'; // Simulated server data key
 
 // DOM references
 const quoteDisplay = document.getElementById('quoteDisplay');
@@ -27,19 +29,51 @@ function loadQuotes() {
 // Save quotes to localStorage
 function saveQuotes() {
   localStorage.setItem('quotes', JSON.stringify(quotes));
+  simulateServerSave(); // Sync to server
 }
 
-// Save selected filter category to localStorage
+// Simulate server-side storage with sessionStorage
+function simulateServerSave() {
+  sessionStorage.setItem(SERVER_KEY, JSON.stringify(quotes));
+}
+
+// Simulate server fetch
+function simulateServerFetch() {
+  const serverData = sessionStorage.getItem(SERVER_KEY);
+  return serverData ? JSON.parse(serverData) : [];
+}
+
+// Sync local data with server every 30s
+function startDataSync() {
+  setInterval(() => {
+    const serverQuotes = simulateServerFetch();
+    const localQuotes = JSON.stringify(quotes);
+    const serverQuotesStr = JSON.stringify(serverQuotes);
+
+    if (localQuotes !== serverQuotesStr) {
+      quotes = serverQuotes;
+      localStorage.setItem('quotes', serverQuotesStr);
+      populateCategories();
+      showConflictNotification();
+    }
+  }, SYNC_INTERVAL);
+}
+
+// Show notification of sync conflict
+function showConflictNotification() {
+  alert("Quote data was updated from the server due to a conflict.");
+}
+
+// Save selected category filter
 function saveFilterPreference(category) {
   localStorage.setItem('selectedCategory', category);
 }
 
-// Load saved filter preference
 function getSavedFilterPreference() {
   return localStorage.getItem('selectedCategory') || 'all';
 }
 
-// Populate both filter dropdowns with categories
+// Populate category dropdown
 function populateCategories() {
   const categories = [...new Set(quotes.map(q => q.category))];
   categoryFilter.innerHTML = '<option value="all">All Categories</option>';
@@ -54,7 +88,6 @@ function populateCategories() {
   categoryFilter.value = savedFilter;
 }
 
-// Display a quote based on current filter
 function showRandomQuote() {
   const selectedCategory = categoryFilter.value;
   const filteredQuotes = selectedCategory === "all"
@@ -71,7 +104,6 @@ function showRandomQuote() {
   sessionStorage.setItem('lastQuote', JSON.stringify(randomQuote));
 }
 
-// Restore last viewed quote
 function restoreLastViewedQuote() {
   const lastQuote = sessionStorage.getItem('lastQuote');
   if (lastQuote) {
@@ -80,13 +112,11 @@ function restoreLastViewedQuote() {
   }
 }
 
-// Filter quotes manually from dropdown change
 function filterQuotes() {
   saveFilterPreference(categoryFilter.value);
   showRandomQuote();
 }
 
-// Add a new quote and update everything
 function addQuote() {
   const quoteText = document.getElementById('newQuoteText').value.trim();
   const quoteCategory = document.getElementById('newQuoteCategory').value.trim();
@@ -106,7 +136,6 @@ function addQuote() {
   document.getElementById('newQuoteCategory').value = '';
 }
 
-// Export to JSON
 function exportQuotesToJson() {
   const blob = new Blob([JSON.stringify(quotes, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -117,7 +146,6 @@ function exportQuotesToJson() {
   URL.revokeObjectURL(url);
 }
 
-// Import from JSON
 function importFromJsonFile(event) {
   const fileReader = new FileReader();
   fileReader.onload = function(e) {
@@ -135,17 +163,16 @@ function importFromJsonFile(event) {
   fileReader.readAsText(event.target.files[0]);
 }
 
-// Dummy test function
 function createAddQuoteForm() {
   return true;
 }
 
-// Init
 document.addEventListener('DOMContentLoaded', () => {
   loadQuotes();
   populateCategories();
   restoreLastViewedQuote();
   showRandomQuote();
+  startDataSync();
 
   newQuoteButton.addEventListener('click', showRandomQuote);
   addQuoteButton.addEventListener('click', addQuote);
