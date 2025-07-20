@@ -83,35 +83,50 @@ function notifyUser(message) {
 
 // Fetch Quotes from Mock API
 async function fetchQuotesFromServer() {
-  const response = await fetch('https://jsonplaceholder.typicode.com/posts?_limit=4');
-  const data = await response.json();
-  return data.map(post => ({ text: post.title, category: "Server", updatedAt: Date.now() }));
+  try {
+    const response = await fetch('https://jsonplaceholder.typicode.com/posts?_limit=4');
+    const data = await response.json();
+    return data.map(post => ({ text: post.title, category: "Server", updatedAt: Date.now() }));
+  } catch (error) {
+    console.error("Error fetching quotes from server:", error);
+    return [];
+  }
 }
 
 // Post Quote to Mock API
 async function postQuoteToServer(quote) {
-  await fetch('https://jsonplaceholder.typicode.com/posts', {
-    method: 'POST',
-    body: JSON.stringify(quote),
-    headers: { 'Content-type': 'application/json; charset=UTF-8' }
-  });
+  try {
+    const response = await fetch('https://jsonplaceholder.typicode.com/posts', {
+      method: 'POST',
+      body: JSON.stringify(quote),
+      headers: { 'Content-Type': 'application/json; charset=UTF-8' }
+    });
+    const data = await response.json();
+    console.log("Quote posted to server:", data);
+  } catch (error) {
+    console.error("Error posting quote to server:", error);
+  }
 }
 
 // Sync Quotes
 async function syncQuotes() {
-  const serverQuotes = await fetchQuotesFromServer();
-  let updated = false;
-  serverQuotes.forEach(serverQuote => {
-    const exists = quotes.find(q => q.text === serverQuote.text);
-    if (!exists) {
-      quotes.push(serverQuote);
-      updated = true;
+  try {
+    const serverQuotes = await fetchQuotesFromServer();
+    let updated = false;
+    serverQuotes.forEach(serverQuote => {
+      const exists = quotes.some(q => q.text === serverQuote.text);
+      if (!exists) {
+        quotes.push(serverQuote);
+        updated = true;
+      }
+    });
+    if (updated) {
+      saveQuotes();
+      populateCategories();
+      notifyUser("Quotes synced with server!");
     }
-  });
-  if (updated) {
-    saveQuotes();
-    populateCategories();
-    notifyUser("Quotes synced with server!");
+  } catch (error) {
+    console.error("Error syncing quotes:", error);
   }
 }
 
