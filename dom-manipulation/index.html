@@ -19,10 +19,10 @@
       border-left: 4px solid #5a2a83;
       background: white;
     }
-    .form-section {
+    .form-section, .file-section {
       margin-top: 2rem;
     }
-    input {
+    input, button {
       margin: 0.3rem;
       padding: 0.4rem;
     }
@@ -48,7 +48,13 @@
     <button id="addQuoteBtn">Add Quote</button>
   </div>
 
-  <script src="script.js"></script>
+  <div class="file-section">
+    <h3>Import/Export Quotes</h3>
+    <input type="file" id="importFile" accept=".json" />
+    <button id="exportBtn">Export Quotes</button>
+  </div>
 
+  <script src="script.js"></script>
+  
 </body>
 </html>
