@@ -22,7 +22,7 @@
     .form-section, .file-section {
       margin-top: 2rem;
     }
-    input, button {
+    input, button, select {
       margin: 0.3rem;
       padding: 0.4rem;
     }
@@ -32,10 +32,8 @@
 
   <h1>Dynamic Quote Generator</h1>
 
-  <label for="categorySelect">Choose a category:</label>
-  <select id="categorySelect">
-    <option value="all">All</option>
-  </select>
+  <label for="categoryFilter">Filter by Category:</label>
+  <select id="categoryFilter"></select>
 
   <div id="quoteDisplay">Click "Show New Quote" to begin!</div>
 
@@ -55,6 +53,5 @@
   </div>
 
   <script src="script.js"></script>
-  
 </body>
 </html>
